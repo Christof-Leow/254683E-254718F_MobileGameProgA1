@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.nyp.scaffoldingapp.ui.pages.*
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
+import practice.wk03.MockScreen
 
 /**
  * The four bottom tabs. An enum keeps the list in one place — add a tab here
@@ -29,7 +30,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ScaffoldingTheme {
-                AppScaffold()
+                // tracks if the user is still on the start screen and keeps it on rotate
+                var showStart by rememberSaveable { mutableStateOf(true) }
+
+                // shows start screen first then swaps to main app when button is tapped
+                if (showStart) {
+                    StartScreenContent(
+                        onGetStarted = { showStart = false }
+                    )
+                } else {
+                    AppScaffold()
+                }
             }
         }
     }
@@ -70,7 +81,7 @@ fun AppScaffold() {
                 Tab.PAGE1 -> Page1()
                 Tab.PAGE2 -> Page2()
                 Tab.PAGE3 -> Page3()
-                Tab.PAGE4 -> Page4()
+                Tab.PAGE4 -> MockScreen()
             }
         }
     }
