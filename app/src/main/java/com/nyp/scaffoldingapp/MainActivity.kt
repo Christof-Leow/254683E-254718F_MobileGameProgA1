@@ -32,13 +32,21 @@ class MainActivity : ComponentActivity() {
             ScaffoldingTheme {
                 // tracks if the user is still on the start screen and keeps it on rotate
                 var showStart by rememberSaveable { mutableStateOf(true) }
-
+                var showLogin by rememberSaveable() { mutableStateOf(true) }
                 // shows start screen first then swaps to main app when button is tapped
                 if (showStart) {
                     StartScreenContent(
                         onGetStarted = { showStart = false }
                     )
-                } else {
+
+                }
+                else if (showLogin)
+                {
+                    LoginScreenContent(
+                        onLoggedIn = { showLogin = false}
+                    )
+                }
+                else {
                     AppScaffold()
                 }
             }
