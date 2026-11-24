@@ -31,7 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 //import com.nyp.scaffoldingapp.CurvedBottomShape
 import com.nyp.scaffoldingapp.R
-import com.nyp.scaffoldingapp.StartScreenContent
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
 
 class LoginScreen : ComponentActivity() {

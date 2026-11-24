@@ -2,9 +2,10 @@ package com.nyp.scaffoldingapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,10 +20,10 @@ import practice.wk03.MockScreen
  * and the navigation bar updates itself.
  */
 enum class Tab(val label: String, @DrawableRes val icon: Int) {
-    PAGE1("Page 1", R.drawable.ic_home),
-    PAGE2("Page 2", R.drawable.ic_email),
-    PAGE3("Page 3", R.drawable.ic_list),
-    PAGE4("Page 4", R.drawable.ic_star)
+    HOME("Home", R.drawable.ic_home),
+    NEARBY("Nearby", R.drawable.ic_list),
+    CART("Cart", R.drawable.ic_star),
+    PROFILE("Profile", R.drawable.ic_email)
 }
 
 class MainActivity : ComponentActivity() {
@@ -30,24 +31,20 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ScaffoldingTheme {
-                // tracks if the user is still on the start screen and keeps it on rotate
+                // tracks if user is still on start screen
                 var showStart by rememberSaveable { mutableStateOf(true) }
-                var showLogin by rememberSaveable() { mutableStateOf(true) }
-                // shows start screen first then swaps to main app when button is tapped
+
                 if (showStart) {
                     StartScreenContent(
-                        onGetStarted = { showStart = false }
+                        onGetStarted = {
+                            // link login screen here later right now goes straight to main app
+                            showStart = false
+                        }
                     )
-
-                }
-                else if (showLogin)
-                {
-                    LoginScreenContent(
-                        onLoggedIn = { showLogin = false}
+                } else {
+                    AppScaffold(
+                        onLogout = { showStart = true }
                     )
-                }
-                else {
-                    AppScaffold()
                 }
             }
         }
@@ -55,9 +52,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppScaffold() {
+fun AppScaffold(
+    onLogout: () -> Unit = {}
+) {
     // rememberSaveable, not remember: the selected tab must survive a rotation.
-    var selectedTab by rememberSaveable { mutableStateOf(Tab.PAGE1) }
+    var selectedTab by rememberSaveable { mutableStateOf(Tab.HOME) }
+
+    // back from other tabs returns to home and back from home exits
+    BackHandler(enabled = selectedTab != Tab.HOME) {
+        selectedTab = Tab.HOME
+    }
 
     Scaffold(
         bottomBar = {
@@ -86,10 +90,10 @@ fun AppScaffold() {
         // the navigation bar.
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (selectedTab) {
-                Tab.PAGE1 -> Page1()
-                Tab.PAGE2 -> Page2()
-                Tab.PAGE3 -> Page3()
-                Tab.PAGE4 -> MockScreen()
+                Tab.HOME -> Page1()
+                Tab.NEARBY -> Page2()
+                Tab.CART -> Page3()
+                Tab.PROFILE -> MockScreen()
             }
         }
     }
