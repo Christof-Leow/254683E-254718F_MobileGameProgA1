@@ -56,12 +56,19 @@ class MainActivity : ComponentActivity() {
 fun AppScaffold(
     onLogout: () -> Unit = {}
 ) {
-    // rememberSaveable, not remember: the selected tab must survive a rotation.
+    // rotation screws this up for some reason so i need this.
     var selectedTab by rememberSaveable { mutableStateOf(Tab.HOME) }
 
-    // temporary state for home screen before adding viewmodel
+    // got this for now, temporary!!!
     var favouriteIds by remember { mutableStateOf(setOf(1, 3)) }
     var appliedCoupon by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedRestaurantId by rememberSaveable { mutableIntStateOf(1) }
+    var orderMode by rememberSaveable { mutableStateOf(OrderMode.DELIVERY) }
+    val cartItems = remember { mutableStateListOf<CartItem>() }
+    val orders = remember { mutableStateListOf<Order>() }
+
+    val selectedRestaurant = SampleData.restaurants.find { it.id == selectedRestaurantId }
+        ?: SampleData.restaurants.first()
 
     // back from other tabs returns to home and back from home exits
     BackHandler(enabled = selectedTab != Tab.HOME) {
@@ -103,13 +110,62 @@ fun AppScaffold(
                         favouriteIds = if (id in favouriteIds) favouriteIds - id else favouriteIds + id
                     },
                     onApplyCoupon = { code -> appliedCoupon = code },
-                    onAddToCart = { _, _ ->
-                        // cart screen links might go here idk
+                    onAddToCart = { food, qty ->
+                        val index = cartItems.indexOfFirst { it.food.id == food.id }
+                        if (index >= 0) {
+                            cartItems[index] = cartItems[index].copy(quantity = cartItems[index].quantity + qty)
+                        } else {
+                            cartItems.add(CartItem(food, qty))
+                        }
                     }
                 )
-                Tab.NEARBY -> Page2()
-                Tab.CART -> Page3()
-                Tab.PROFILE -> MockScreen()
+                Tab.NEARBY -> NearbyScreen(
+                    restaurants = SampleData.restaurants,
+                    selectedRestaurantId = selectedRestaurantId,
+                    orderMode = orderMode,
+                    onChangeOrderMode = { orderMode = it },
+                    onSelectRestaurant = { selectedRestaurantId = it.id }
+                )
+                Tab.CART -> CartScreen(
+                    cartItems = cartItems,
+                    selectedRestaurantName = selectedRestaurant.name,
+                    orderMode = orderMode,
+                    appliedCoupon = appliedCoupon,
+                    onUpdateQuantity = { foodId, delta ->
+                        val index = cartItems.indexOfFirst { it.food.id == foodId }
+                        if (index >= 0) {
+                            val newQty = cartItems[index].quantity + delta
+                            if (newQty <= 0) cartItems.removeAt(index)
+                            else cartItems[index] = cartItems[index].copy(quantity = newQty)
+                        }
+                    },
+                    onRemoveItem = { foodId ->
+                        cartItems.removeAll { it.food.id == foodId }
+                    },
+                    onBrowseMenu = { selectedTab = Tab.HOME },
+                    onProceedToCheckout = { total ->
+                        // temporary order placement until partner checkout screen is linked
+                        orders.add(
+                            0,
+                            Order(
+                                id = 100 + orders.size + 1,
+                                restaurantName = selectedRestaurant.name,
+                                itemCount = cartItems.sumOf { it.quantity },
+                                total = total,
+                                status = OrderStatus.PREPARING
+                            )
+                        )
+                        cartItems.clear()
+                        selectedTab = Tab.PROFILE
+                    }
+                )
+                Tab.PROFILE -> ProfileScreen(
+                    userName = "Aniq", // placeholder, i dont even know if we are having account system
+                    userEmail = "aniq@gmail.com",
+                    orders = orders,
+                    faqs = SampleData.faqs,
+                    onLogout = onLogout
+                )
             }
         }
     }
