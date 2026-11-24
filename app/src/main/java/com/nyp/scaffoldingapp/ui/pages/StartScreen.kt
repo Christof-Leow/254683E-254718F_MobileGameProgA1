@@ -46,7 +46,7 @@ fun StartScreenContent(
         ) {
             // swap ic launcher foreground with banner food when image is added
             Image(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
+                painter = painterResource(R.drawable.banner_food),
                 contentDescription = "Food banner",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()

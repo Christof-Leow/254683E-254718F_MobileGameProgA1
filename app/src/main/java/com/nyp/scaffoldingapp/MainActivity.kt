@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import com.nyp.scaffoldingapp.data.*
 import com.nyp.scaffoldingapp.ui.pages.*
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
 import practice.wk03.MockScreen
@@ -58,6 +59,10 @@ fun AppScaffold(
     // rememberSaveable, not remember: the selected tab must survive a rotation.
     var selectedTab by rememberSaveable { mutableStateOf(Tab.HOME) }
 
+    // temporary state for home screen before adding viewmodel
+    var favouriteIds by remember { mutableStateOf(setOf(1, 3)) }
+    var appliedCoupon by rememberSaveable { mutableStateOf<String?>(null) }
+
     // back from other tabs returns to home and back from home exits
     BackHandler(enabled = selectedTab != Tab.HOME) {
         selectedTab = Tab.HOME
@@ -90,7 +95,18 @@ fun AppScaffold(
         // the navigation bar.
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (selectedTab) {
-                Tab.HOME -> Page1()
+                Tab.HOME -> HomeScreen(
+                    foods = SampleData.foods,
+                    favouriteIds = favouriteIds,
+                    appliedCoupon = appliedCoupon,
+                    onToggleFavourite = { id ->
+                        favouriteIds = if (id in favouriteIds) favouriteIds - id else favouriteIds + id
+                    },
+                    onApplyCoupon = { code -> appliedCoupon = code },
+                    onAddToCart = { _, _ ->
+                        // cart screen links might go here idk
+                    }
+                )
                 Tab.NEARBY -> Page2()
                 Tab.CART -> Page3()
                 Tab.PROFILE -> MockScreen()
