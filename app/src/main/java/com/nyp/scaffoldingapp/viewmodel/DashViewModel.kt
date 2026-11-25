@@ -134,7 +134,8 @@ class DashViewModel : ViewModel() {
                             prepMins = menuItem.prepMins,
                             isHalal = food.isHalal,
                             description = food.description,
-                            imageRes = image
+                            imageRes = image,
+                            imageUrl = food.imageUrl
                         )
                     )
                 }
@@ -158,7 +159,8 @@ class DashViewModel : ViewModel() {
                         address = "${outlet.address}, Singapore ${outlet.postalCode}",
                         distanceKm = 0.0,
                         hours = "${outlet.openingTime} - ${outlet.closingTime}",
-                        promoTag = ""
+                        promoTag = "",
+                        imageUrl = outlet.imageUrl
                     )
                 )
             }

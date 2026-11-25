@@ -47,10 +47,10 @@ fun FoodRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // crops food image inside a rounded square
-            Image(
-                painter = painterResource(food.imageRes),
+            OnlineImage(
+                imageUrl = food.imageUrl,
+                fallbackRes = food.imageRes,
                 contentDescription = food.name,
-                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(72.dp)
                     .clip(RoundedCornerShape(10.dp))

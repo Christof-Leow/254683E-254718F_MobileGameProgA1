@@ -13,7 +13,8 @@ data class FoodItem(
     val prepMins: Int,
     val isHalal: Boolean,
     val description: String,
-    @DrawableRes val imageRes: Int
+    @DrawableRes val imageRes: Int,
+    val imageUrl: String = ""
 )
 
 // data class for one restaurant outlet
@@ -23,7 +24,8 @@ data class Restaurant(
     val address: String,
     val distanceKm: Double,
     val hours: String,
-    val promoTag: String
+    val promoTag: String,
+    val imageUrl: String = ""
 )
 
 // data class for one item inside the cart

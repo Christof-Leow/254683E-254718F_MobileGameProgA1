@@ -7,6 +7,10 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+// for images
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+
 object DashApi {
 
     private const val BASE_URL = "https://asj80a.mockapi.dog/v1"
@@ -210,4 +214,29 @@ object DashApi {
             item.getInt(key)
         }
     }
+
+    // download the image from the given url
+    suspend fun fetchImage(imageUrl: String): Bitmap? =
+        withContext(Dispatchers.IO) {
+
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+
+            try {
+                connection.requestMethod = "GET"
+                connection.connectTimeout = TIMEOUT_MS
+                connection.readTimeout = TIMEOUT_MS
+
+                if (connection.responseCode == 200) {
+                    connection.inputStream.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                } else {
+                    null
+                }
+
+            } finally {
+                connection.disconnect()
+            }
+        }
 }
