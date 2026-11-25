@@ -42,7 +42,7 @@ class LoginScreen : ComponentActivity() {
 
         setContent {
             ScaffoldingTheme {
-                LoginScreenContent(onLogin = {}, onRegisterClick = {})
+                LoginScreenContent(onLogin = {}, onRegisterClick = {}, onBackClick = {})
             }
         }
     }
@@ -52,6 +52,7 @@ class LoginScreen : ComponentActivity() {
 fun LoginScreenContent(
     onLogin: () -> Unit,
     onRegisterClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
@@ -83,7 +84,7 @@ fun LoginScreenContent(
         Text(
             text = "Back",
             color = Color(0xFFFF7B7B),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().clickable { onBackClick() },
             textAlign = TextAlign.End
         )
 
@@ -217,7 +218,8 @@ fun LoginScreenPreview() {
     ScaffoldingTheme {
         LoginScreenContent(
             onLogin = {},
-            onRegisterClick = {}
+            onRegisterClick = {},
+            onBackClick = {}
         )
     }
 }
