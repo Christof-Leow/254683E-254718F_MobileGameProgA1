@@ -50,95 +50,164 @@ class LoginScreen : ComponentActivity() {
 
 @Composable
 fun LoginScreenContent(
-    onLoggedIn: () -> Unit,
-    modifier: Modifier = Modifier)
-{
-    // stacks the food top and text bottom
+    onLogin: () -> Unit,
+    onRegisterClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    val emailError =
+        email.isNotBlank() &&
+                !Patterns.EMAIL_ADDRESS.matcher(email).matches()
+
+    val passwordError =
+        password.isNotBlank() &&
+                password.length < 8
+
+    val isFormValid =
+        email.isNotBlank() &&
+                password.isNotBlank() &&
+                !emailError &&
+                !passwordError
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFF2F5FA))
+            .padding(horizontal = 24.dp)
     ) {
-        // clips the pink box into the curved shape at the bottom
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.45f)
-                //.clip(CurvedBottomShape)
-                //.background(MaterialTheme.colorScheme.primary)
-        ) {
-            // crops the food picture so it fills the whole curved box
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = "Food banner",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Back",
+            color = Color(0xFFFF7B7B),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.End
+        )
+
+        Spacer(modifier = Modifier.height(72.dp))
+
+        Text(
+            text = "Login to your account",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Welcome back",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(56.dp))
+
+        Text(
+            text = "Email Address",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            placeholder = {
+                Text("Enter email")
+            },
+            singleLine = true,
+            isError = emailError,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        if (emailError) {
+            Text(
+                text = "Please enter a valid email address",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 
-        // bottom half with app name tagline and button
-        Column(
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Password",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            placeholder = {
+                Text("Enter password")
+            },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            isError = passwordError,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        if (passwordError) {
+            Text(
+                text = "Password must be at least 8 characters",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = onLogin,
+            enabled = isFormValid,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .height(56.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFF7B7B)
+            )
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Log In",
+                fontWeight = FontWeight.Bold
+            )
+        }
 
-            // puts dash and dine side by side so dine can have the theme color
-            Row {
-                // makes the title bold
-                Text(
-                    text = "Dash & ",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Dine",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
 
             Text(
-                text = "Run to fill your tummies",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 12.dp)
+                text = "No account? "
             )
 
-            // empty space to push the button down to the bottom
-            Spacer(modifier = Modifier.weight(1f))
-
-            // rounds the button corners and adds a drop shadow underneath
-            Button(
-                onClick = onLoggedIn,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // draws the drop shadow using the same rounded shape
-                    .shadow(
-                        elevation = 10.dp,
-                        shape = RoundedCornerShape(14.dp)
-                    )
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                // turns off the default button shadow so they don't clash
-                elevation = null
-            ) {
-                Text(
-                    text = "Sign Up",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            Text(
+                text = "Register",
+                color = Color(0xFFFF7B7B),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable {
+                    onRegisterClick()
+                }
+            )
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
