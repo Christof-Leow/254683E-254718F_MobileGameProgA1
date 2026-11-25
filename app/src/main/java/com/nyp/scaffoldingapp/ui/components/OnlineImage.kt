@@ -21,25 +21,26 @@ fun OnlineImage(
     imageUrl: String,
     fallbackRes: Int,
     contentDescription: String,
-    modifier: Modifier = Modifier
-) {
+    modifier: Modifier = Modifier,
+    onFinished: () -> Unit = {}
+)
+{
     var bitmap by remember(imageUrl) {
         mutableStateOf<Bitmap?>(null)
     }
 
     // download again when the image url changes
     LaunchedEffect(imageUrl) {
-
         if (imageUrl.isNotBlank()) {
             try {
                 bitmap = DashApi.fetchImage(imageUrl)
-
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 bitmap = null
             }
         }
+        onFinished()
     }
 
     val current = bitmap
