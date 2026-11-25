@@ -2,8 +2,13 @@ package com.nyp.scaffoldingapp.ui.components
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -21,38 +26,64 @@ fun OnlineImage(
     imageUrl: String,
     fallbackRes: Int,
     contentDescription: String,
-    modifier: Modifier = Modifier,
-    onFinished: () -> Unit = {}
-)
-{
+    modifier: Modifier = Modifier
+) {
+    // check if the image already exists
     var bitmap by remember(imageUrl) {
-        mutableStateOf<Bitmap?>(null)
+        mutableStateOf<Bitmap?>(
+            DashApi.getCachedImage(imageUrl)
+        )
     }
 
-    // download again when the image url changes
+    var isLoading by remember(imageUrl) {
+        mutableStateOf(imageUrl.isNotBlank() && bitmap == null)
+    }
+
+    // only download if we do not have the image yet
     LaunchedEffect(imageUrl) {
-        if (imageUrl.isNotBlank()) {
+
+        if (imageUrl.isNotBlank() && bitmap == null) {
             try {
                 bitmap = DashApi.fetchImage(imageUrl)
+
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 bitmap = null
             }
         }
-        onFinished()
+
+        isLoading = false
     }
 
     val current = bitmap
 
-    if (current != null) {
+    if (isLoading) {
+
+        // show loading circle while downloading
+        Box(
+            modifier = modifier.background(
+                MaterialTheme.colorScheme.surfaceVariant
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+
+    } else if (current != null) {
+
         Image(
             bitmap = current.asImageBitmap(),
             contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
             modifier = modifier
         )
+
     } else {
+
         Image(
             painter = painterResource(fallbackRes),
             contentDescription = contentDescription,
