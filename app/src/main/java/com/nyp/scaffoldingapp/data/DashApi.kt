@@ -7,10 +7,22 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+// for images
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+
 object DashApi {
 
     private const val BASE_URL = "https://asj80a.mockapi.dog/v1"
     private const val TIMEOUT_MS = 10000
+
+    // stores images that have already been downloaded
+    private val imageCache = mutableMapOf<String, Bitmap>()
+
+    // check if the image has already been downloaded
+    fun getCachedImage(imageUrl: String): Bitmap? {
+        return imageCache[imageUrl]
+    }
 
     // get json data from the server
     private suspend fun getJson(path: String): JSONArray =
@@ -209,5 +221,46 @@ object DashApi {
         } else {
             item.getInt(key)
         }
+    }
+
+    // download the image from the given url
+    suspend fun fetchImage(imageUrl: String): Bitmap? {
+
+        // use the existing image if we already downloaded it
+        val cachedImage = imageCache[imageUrl]
+
+        if (cachedImage != null) {
+            return cachedImage
+        }
+
+        val bitmap = withContext(Dispatchers.IO) {
+
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+
+            try {
+                connection.requestMethod = "GET"
+                connection.connectTimeout = TIMEOUT_MS
+                connection.readTimeout = TIMEOUT_MS
+
+                if (connection.responseCode == 200) {
+                    connection.inputStream.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                } else {
+                    null
+                }
+
+            } finally {
+                connection.disconnect()
+            }
+        }
+
+        // save the image so other screens can use it
+        if (bitmap != null) {
+            imageCache[imageUrl] = bitmap
+        }
+
+        return bitmap
     }
 }

@@ -34,6 +34,7 @@ import com.nyp.scaffoldingapp.data.CartItem
 import com.nyp.scaffoldingapp.data.OrderMode
 import com.nyp.scaffoldingapp.data.SampleData
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
+import com.nyp.scaffoldingapp.ui.components.OnlineImage
 
 // cart screen showing selected outlet items and proceed button
 @Composable
@@ -102,10 +103,10 @@ fun CartScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Image(
-                                painter = painterResource(item.food.imageRes),
+                            OnlineImage(
+                                imageUrl = item.food.imageUrl,
+                                fallbackRes = item.food.imageRes,
                                 contentDescription = item.food.name,
-                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(64.dp)
                                     .clip(RoundedCornerShape(10.dp))

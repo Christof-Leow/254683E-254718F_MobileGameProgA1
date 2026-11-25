@@ -32,6 +32,11 @@ import com.nyp.scaffoldingapp.data.Restaurant
 import com.nyp.scaffoldingapp.data.SampleData
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
 
+// images
+import androidx.compose.ui.draw.clip
+import com.nyp.scaffoldingapp.R
+import com.nyp.scaffoldingapp.ui.components.OnlineImage
+
 // screen for searching nearby outlets and toggling delivery or pickup
 @Composable
 fun NearbyScreen(
@@ -113,6 +118,20 @@ fun NearbyScreen(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
+
+                            // show the outlet image
+                            OnlineImage(
+                                imageUrl = outlet.imageUrl,
+                                fallbackRes = R.drawable.ic_launcher_foreground,
+                                contentDescription = outlet.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
                             Text(
                                 text = outlet.promoTag,
                                 style = MaterialTheme.typography.labelMedium,

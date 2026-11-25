@@ -5,16 +5,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nyp.scaffoldingapp.data.*
 import com.nyp.scaffoldingapp.ui.pages.*
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
-import practice.wk03.MockScreen
+import com.nyp.scaffoldingapp.viewmodel.*
 
 /**
  * The four bottom tabs. An enum keeps the list in one place — add a tab here
@@ -32,6 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ScaffoldingTheme {
+
                 // tracks if user is still on start screen
                 var showStart by rememberSaveable { mutableStateOf(true) }
 
@@ -59,16 +65,8 @@ fun AppScaffold(
     // rotation screws this up for some reason so i need this.
     var selectedTab by rememberSaveable { mutableStateOf(Tab.HOME) }
 
-    // got this for now, temporary!!!
-    var favouriteIds by remember { mutableStateOf(setOf(1, 3)) }
-    var appliedCoupon by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedRestaurantId by rememberSaveable { mutableIntStateOf(1) }
-    var orderMode by rememberSaveable { mutableStateOf(OrderMode.DELIVERY) }
-    val cartItems = remember { mutableStateListOf<CartItem>() }
-    val orders = remember { mutableStateListOf<Order>() }
-
-    val selectedRestaurant = SampleData.restaurants.find { it.id == selectedRestaurantId }
-        ?: SampleData.restaurants.first()
+    val viewModel: DashViewModel = viewModel()
+    val state by viewModel.state.collectAsState()
 
     // back from other tabs returns to home and back from home exits
     BackHandler(enabled = selectedTab != Tab.HOME) {
@@ -101,72 +99,200 @@ fun AppScaffold(
         // Use the padding Scaffold gives you, or your content hides behind
         // the navigation bar.
         Box(Modifier.padding(padding).fillMaxSize()) {
-            when (selectedTab) {
-                Tab.HOME -> HomeScreen(
-                    foods = SampleData.foods,
-                    favouriteIds = favouriteIds,
-                    appliedCoupon = appliedCoupon,
-                    onToggleFavourite = { id ->
-                        favouriteIds = if (id in favouriteIds) favouriteIds - id else favouriteIds + id
-                    },
-                    onApplyCoupon = { code -> appliedCoupon = code },
-                    onAddToCart = { food, qty ->
-                        val index = cartItems.indexOfFirst { it.food.id == food.id }
-                        if (index >= 0) {
-                            cartItems[index] = cartItems[index].copy(quantity = cartItems[index].quantity + qty)
-                        } else {
-                            cartItems.add(CartItem(food, qty))
+
+            when (val current = state) {
+
+                is UiState.Loading -> LoadingSkeleton()
+
+                is UiState.Failed -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(current.message)
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Button(onClick = { viewModel.load() }) {
+                            Text("Retry")
                         }
                     }
-                )
-                Tab.NEARBY -> NearbyScreen(
-                    restaurants = SampleData.restaurants,
-                    selectedRestaurantId = selectedRestaurantId,
-                    orderMode = orderMode,
-                    onChangeOrderMode = { orderMode = it },
-                    onSelectRestaurant = { selectedRestaurantId = it.id }
-                )
-                Tab.CART -> CartScreen(
-                    cartItems = cartItems,
-                    selectedRestaurantName = selectedRestaurant.name,
-                    orderMode = orderMode,
-                    appliedCoupon = appliedCoupon,
-                    onUpdateQuantity = { foodId, delta ->
-                        val index = cartItems.indexOfFirst { it.food.id == foodId }
-                        if (index >= 0) {
-                            val newQty = cartItems[index].quantity + delta
-                            if (newQty <= 0) cartItems.removeAt(index)
-                            else cartItems[index] = cartItems[index].copy(quantity = newQty)
-                        }
-                    },
-                    onRemoveItem = { foodId ->
-                        cartItems.removeAll { it.food.id == foodId }
-                    },
-                    onBrowseMenu = { selectedTab = Tab.HOME },
-                    onProceedToCheckout = { total ->
-                        // temporary order placement until partner checkout screen is linked
-                        orders.add(
-                            0,
-                            Order(
-                                id = 100 + orders.size + 1,
-                                restaurantName = selectedRestaurant.name,
-                                itemCount = cartItems.sumOf { it.quantity },
-                                total = total,
-                                status = OrderStatus.PREPARING
-                            )
+                }
+
+                is UiState.Ready -> {
+
+                    val foods = viewModel.getFoods(current.data)
+                    val restaurants = viewModel.getRestaurants(current.data)
+
+                    val selectedRestaurant = current.data.restaurants.find {
+                        it.id == viewModel.selectedRestaurantId && it.isActive
+                    }
+
+                    when (selectedTab) {
+
+                        Tab.HOME -> HomeScreen(
+                            foods = foods,
+                            favouriteIds = viewModel.favouriteIds,
+                            appliedCoupon = viewModel.appliedCoupon,
+                            onToggleFavourite = { id ->
+                                viewModel.toggleFavourite(id)
+                            },
+                            onApplyCoupon = { code ->
+                                viewModel.appliedCoupon = code
+                            },
+                            onAddToCart = { food, qty ->
+                                viewModel.addToCart(food, qty)
+                            }
                         )
-                        cartItems.clear()
-                        selectedTab = Tab.PROFILE
+
+                        Tab.NEARBY -> NearbyScreen(
+                            restaurants = restaurants,
+                            selectedRestaurantId = viewModel.selectedRestaurantId,
+                            orderMode = viewModel.orderMode,
+
+                            onChangeOrderMode = { mode ->
+
+                                if (selectedRestaurant != null) {
+                                    if (mode == OrderMode.DELIVERY &&
+                                        selectedRestaurant.supportsDelivery
+                                    ) {
+                                        viewModel.changeOrderMode(mode)
+                                    } else if (mode == OrderMode.PICKUP &&
+                                        selectedRestaurant.supportsPickup
+                                    ) {
+                                        viewModel.changeOrderMode(mode)
+                                    }
+                                }
+                            },
+
+                            onSelectRestaurant = { outlet ->
+
+                                val restaurant = current.data.restaurants.find {
+                                    it.id == outlet.id
+                                }
+
+                                if (restaurant != null) {
+                                    viewModel.selectRestaurant(restaurant)
+                                }
+                            }
+                        )
+
+                        Tab.CART -> CartScreen(
+                            cartItems = viewModel.cartItems,
+                            selectedRestaurantName = selectedRestaurant?.name
+                                ?: "No outlet selected",
+                            orderMode = viewModel.orderMode,
+                            appliedCoupon = viewModel.appliedCoupon,
+
+                            onUpdateQuantity = { foodId, delta ->
+                                viewModel.updateQuantity(foodId, delta)
+                            },
+
+                            onRemoveItem = { foodId ->
+                                viewModel.removeItem(foodId)
+                            },
+
+                            onBrowseMenu = {
+                                selectedTab = Tab.HOME
+                            },
+
+                            onProceedToCheckout = { total ->
+                                // temporary order placement until partner checkout screen is linked
+                                if (selectedRestaurant != null) {
+                                    viewModel.placeOrder(
+                                        selectedRestaurant.name,
+                                        total
+                                    )
+
+                                    selectedTab = Tab.PROFILE
+                                }
+                            }
+                        )
+
+                        Tab.PROFILE -> ProfileScreen(
+                            userName = "Aniq", // placeholder, i dont even know if we are having account system
+                            userEmail = "aniq@gmail.com",
+                            orders = viewModel.orders,
+                            faqs = SampleData.faqs,
+                            onLogout = {
+                                viewModel.logout()
+                                onLogout()
+                            }
+                        )
                     }
-                )
-                Tab.PROFILE -> ProfileScreen(
-                    userName = "Aniq", // placeholder, i dont even know if we are having account system
-                    userEmail = "aniq@gmail.com",
-                    orders = orders,
-                    faqs = SampleData.faqs,
-                    onLogout = onLogout
-                )
+                }
             }
         }
+    }
+}
+
+// placeholder boxes while waiting for the api
+@Composable
+fun LoadingSkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            "loading restaurant data..",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        for (i in 0 until 4) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    Modifier
+                        .size(80.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+
+                Spacer(Modifier.width(12.dp))
+
+                Column {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(20.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Box(
+                        Modifier
+                            .fillMaxWidth(0.4f)
+                            .height(16.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoadingSkeletonPreview() {
+    ScaffoldingTheme {
+        LoadingSkeleton()
     }
 }

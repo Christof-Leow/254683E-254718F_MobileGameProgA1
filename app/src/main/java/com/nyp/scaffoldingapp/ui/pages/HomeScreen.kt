@@ -43,6 +43,7 @@ import com.nyp.scaffoldingapp.data.FoodItem
 import com.nyp.scaffoldingapp.data.SampleData
 import com.nyp.scaffoldingapp.ui.components.FoodRow
 import com.nyp.scaffoldingapp.ui.theme.ScaffoldingTheme
+import com.nyp.scaffoldingapp.ui.components.OnlineImage
 
 // home screen with promos search filters menu list and food detail
 @Composable
@@ -256,10 +257,10 @@ fun FoodDetailView(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Image(
-            painter = painterResource(food.imageRes),
+        OnlineImage(
+            imageUrl = food.imageUrl,
+            fallbackRes = food.imageRes,
             contentDescription = food.name,
-            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(210.dp)
